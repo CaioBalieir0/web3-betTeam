@@ -12,6 +12,7 @@ import {
   SimpleGrid,
   Spinner,
   Text,
+  Tooltip,
   VStack,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
@@ -71,6 +72,11 @@ export default function Bet() {
         setMessage(err.data ? err.data.message : err.message);
         setIsLoading(false);
       });
+  }
+
+  function doLogout() {
+    localStorage.removeItem("wallet");
+    push("/");
   }
 
   function btnClaimClick() {
@@ -140,17 +146,26 @@ export default function Bet() {
           </HStack>
 
           {wallet && (
-            <Box
-              bg="rgba(124,58,237,0.15)"
-              border="1px solid rgba(124,58,237,0.3)"
-              borderRadius="full"
-              px={4}
-              py={2}
-            >
-              <Text color="#A78BFA" fontSize="sm" fontFamily="mono">
-                {truncateAddress(wallet)}
-              </Text>
-            </Box>
+            <Tooltip label="Clique para desconectar" placement="bottom">
+              <Button
+                variant="unstyled"
+                bg="rgba(124,58,237,0.15)"
+                border="1px solid rgba(124,58,237,0.3)"
+                borderRadius="full"
+                px={4}
+                py={2}
+                h="auto"
+                onClick={doLogout}
+                _hover={{
+                  bg: "rgba(239,68,68,0.15)",
+                  borderColor: "rgba(239,68,68,0.4)",
+                }}
+              >
+                <Text color="#A78BFA" fontSize="sm" fontFamily="mono">
+                  {truncateAddress(wallet)}
+                </Text>
+              </Button>
+            </Tooltip>
           )}
         </Flex>
       </Box>
