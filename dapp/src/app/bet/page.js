@@ -189,16 +189,14 @@ export default function Bet() {
             {(dispute.winner == 0 || dispute.winner == 1) && (
               <Box {...cardStyle}>
                 <VStack spacing={4}>
-                  {dispute.img1 && (
-                    <Image
-                      src={dispute.img1}
-                      alt={dispute.team1}
-                      borderRadius="xl"
-                      maxH="200px"
-                      objectFit="cover"
-                      w="full"
-                    />
-                  )}
+                  <Image
+                    src={dispute.img1 || "/team-placeholder.svg"}
+                    alt={dispute.team1}
+                    borderRadius="xl"
+                    maxH="200px"
+                    objectFit="cover"
+                    w="full"
+                  />
                   <Text fontSize="xl" fontWeight="bold" color="white">
                     {dispute.team1}
                   </Text>
@@ -243,16 +241,14 @@ export default function Bet() {
             {(dispute.winner == 0 || dispute.winner == 2) && (
               <Box {...cardStyle}>
                 <VStack spacing={4}>
-                  {dispute.img2 && (
-                    <Image
-                      src={dispute.img2}
-                      alt={dispute.team2}
-                      borderRadius="xl"
-                      maxH="200px"
-                      objectFit="cover"
-                      w="full"
-                    />
-                  )}
+                  <Image
+                    src={dispute.img2 || "/team-placeholder.svg"}
+                    alt={dispute.team2}
+                    borderRadius="xl"
+                    maxH="200px"
+                    objectFit="cover"
+                    w="full"
+                  />
                   <Text fontSize="xl" fontWeight="bold" color="white">
                     {dispute.team2}
                   </Text>
