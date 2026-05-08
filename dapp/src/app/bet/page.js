@@ -1,32 +1,52 @@
 "use client";
 
-import Head from "next/head";
-import { useState } from "react";
-import { useEffect } from "react";
+import {
+  Badge,
+  Box,
+  Button,
+  Container,
+  Flex,
+  HStack,
+  Image,
+  Link,
+  SimpleGrid,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { claimPrize, getDispute, placeBet } from "@/services/Web3Services";
 import Web3 from "web3";
 
+function truncateAddress(addr) {
+  if (!addr) return "";
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
 export default function Bet() {
   const { push } = useRouter();
-
-  const [message, setMessage] = useState();
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [wallet, setWallet] = useState("");
   const [dispute, setDispute] = useState({
-    team1: "Loading...",
-    team2: "Loading...",
-    img1: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPruUxqXpOt0kRK7Z-BTs9t2RDirUWINWYwA&s",
-    img2: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPruUxqXpOt0kRK7Z-BTs9t2RDirUWINWYwA&s",
+    team1: "Carregando...",
+    team2: "Carregando...",
+    img1: "",
+    img2: "",
     total1: 0,
     total2: 0,
     winner: 0,
   });
 
   useEffect(() => {
-    if (!localStorage.getItem("wallet")) return push("/");
-    setMessage("Obtendo dados da disputa...aguarde...");
+    const savedWallet = localStorage.getItem("wallet");
+    if (!savedWallet) return push("/");
+    setWallet(savedWallet);
+    setMessage("Obtendo dados da disputa...");
     getDispute()
-      .then((dispute) => {
-        setDispute(dispute);
+      .then((data) => {
+        setDispute(data);
         setMessage("");
       })
       .catch((err) => {
@@ -36,158 +56,263 @@ export default function Bet() {
   }, []);
 
   function processBet(team) {
-    setMessage("Conectando na carteira...aguarde...");
     const amount = prompt("Quantia em POL para apostar:", "1");
+    if (!amount) return;
+    setMessage("Aguardando confirmação na carteira...");
+    setIsLoading(true);
     placeBet(team, amount)
       .then(() => {
-        alert(
-          "Aposta recebida com sucesso. Pode demorar 1 minuto para que apareça no sistema."
-        );
+        alert("Aposta recebida! Pode demorar 1 minuto para aparecer no sistema.");
         setMessage("");
+        setIsLoading(false);
       })
       .catch((err) => {
         console.error(err.data ? err.data : err);
         setMessage(err.data ? err.data.message : err.message);
+        setIsLoading(false);
       });
   }
 
   function btnClaimClick() {
-    setMessage("Conectando na carteira...aguarde...");
+    setMessage("Aguardando confirmação na carteira...");
+    setIsLoading(true);
     claimPrize()
       .then(() => {
-        alert(
-          "Prêmio coletado com sucesso. Pode demorar 1 minuto para que apareça na sua carteira."
-        );
+        alert("Prêmio coletado! Pode demorar 1 minuto para aparecer na sua carteira.");
         setMessage("");
+        setIsLoading(false);
       })
       .catch((err) => {
         console.error(err.data ? err.data : err);
         setMessage(err.data ? err.data.message : err.message);
+        setIsLoading(false);
       });
   }
 
+  const cardStyle = {
+    bg: "#13142A",
+    border: "1px solid rgba(124,58,237,0.3)",
+    borderRadius: "2xl",
+    p: 6,
+    transition: "all 0.2s",
+    _hover: {
+      boxShadow: "0 0 30px rgba(124,58,237,0.35)",
+      borderColor: "rgba(124,58,237,0.6)",
+      transform: "translateY(-2px)",
+    },
+  };
+
   return (
-    <>
-      <Head>
-        <title>BetTimes | Apostar</title>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
-      <div className="container px-4 py-5">
-        <div className="row align-items-center">
-          <h1 className="display-5 fw-bold text-body-emphasis lh-1 mb-3">
-            BetTimes
-          </h1>
-          <p className="lead">Apostas on-chain em disputas de times.</p>
-          {dispute.winner == 0 ? (
-            <p className="lead">
-              Você tem até o dia da eleição para deixar sua aposta em um dos
-              times abaixo.
-            </p>
-          ) : (
-            <p className="lead">
-              Disputa encerrada. Veja o vencedor abaixo e solicite seu prêmio.
-            </p>
+    <Box minH="100vh" bg="#0D0E1A">
+      {/* Header */}
+      <Box
+        borderBottom="1px solid rgba(124,58,237,0.2)"
+        px={8}
+        py={4}
+        bg="rgba(19,20,42,0.8)"
+        backdropFilter="blur(10px)"
+        position="sticky"
+        top={0}
+        zIndex={10}
+      >
+        <Flex justify="space-between" align="center">
+          <HStack spacing={3}>
+            <Text
+              fontSize="2xl"
+              fontWeight="black"
+              bgGradient="linear(to-r, #7C3AED, #3B82F6)"
+              bgClip="text"
+            >
+              BetTimes
+            </Text>
+            <Badge
+              bg="rgba(124,58,237,0.2)"
+              color="#A78BFA"
+              border="1px solid rgba(124,58,237,0.4)"
+              borderRadius="full"
+              px={3}
+              py={1}
+              fontSize="xs"
+              letterSpacing="wider"
+            >
+              ON-CHAIN
+            </Badge>
+          </HStack>
+
+          {wallet && (
+            <Box
+              bg="rgba(124,58,237,0.15)"
+              border="1px solid rgba(124,58,237,0.3)"
+              borderRadius="full"
+              px={4}
+              py={2}
+            >
+              <Text color="#A78BFA" fontSize="sm" fontFamily="mono">
+                {truncateAddress(wallet)}
+              </Text>
+            </Box>
           )}
-        </div>
-        <div className="row flex-lg-row-reverse align-items-center g-1 py-5">
-          <div className="col"></div>
-          {dispute.winner == 0 || dispute.winner == 1 ? (
-            <div className="col">
-              <h3 className="my-2 d-block mx-auto" style={{ width: 250 }}>
-                {dispute.team1}
-              </h3>
-              <img
-                src={dispute.img1}
-                className="d-block mx-auto img-fluid rounded"
-                width={250}
-              />
-              {dispute.winner == 1 ? (
-                <button
-                  className="btn btn-primary p-3 my-2 d-block mx-auto"
-                  style={{ width: 250 }}
-                  onClick={btnClaimClick}
-                >
-                  Pegar meu prêmio
-                </button>
-              ) : (
-                <button
-                  className="btn btn-primary p-3 my-2 d-block mx-auto"
-                  style={{ width: 250 }}
-                  onClick={() => processBet(1)}
-                >
-                  Aposto nesse time
-                </button>
-              )}
-              <span
-                className="badge text-bg-secondary d-block mx-auto"
-                style={{ width: 250 }}
-              >
-                {Web3.utils.fromWei(dispute.total1, "ether")} POL Apostados
-              </span>
-            </div>
-          ) : (
-            <></>
+        </Flex>
+      </Box>
+
+      <Container maxW="container.lg" py={10}>
+        <VStack spacing={8} align="stretch">
+          {/* Título da seção */}
+          <VStack align="start" spacing={1}>
+            <Text fontSize="3xl" fontWeight="bold" color="white">
+              Disputa Atual
+            </Text>
+            <Text color="whiteAlpha.600">
+              {dispute.winner == 0
+                ? "Escolha um time e faça sua aposta em POL"
+                : "Disputa encerrada — veja o vencedor e solicite seu prêmio"}
+            </Text>
+          </VStack>
+
+          {/* Cards dos times */}
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            {(dispute.winner == 0 || dispute.winner == 1) && (
+              <Box {...cardStyle}>
+                <VStack spacing={4}>
+                  {dispute.img1 && (
+                    <Image
+                      src={dispute.img1}
+                      alt={dispute.team1}
+                      borderRadius="xl"
+                      maxH="200px"
+                      objectFit="cover"
+                      w="full"
+                    />
+                  )}
+                  <Text fontSize="xl" fontWeight="bold" color="white">
+                    {dispute.team1}
+                  </Text>
+                  <Badge
+                    bgGradient="linear(to-r, rgba(124,58,237,0.3), rgba(59,130,246,0.3))"
+                    border="1px solid rgba(124,58,237,0.4)"
+                    color="whiteAlpha.900"
+                    borderRadius="full"
+                    px={4}
+                    py={2}
+                    fontSize="sm"
+                  >
+                    {Web3.utils.fromWei(dispute.total1.toString(), "ether")} POL apostados
+                  </Badge>
+                  {dispute.winner == 1 ? (
+                    <Button
+                      width="full"
+                      colorScheme="green"
+                      size="lg"
+                      onClick={btnClaimClick}
+                      isLoading={isLoading}
+                      loadingText="Processando..."
+                    >
+                      Pegar meu prêmio 🏆
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="brand"
+                      width="full"
+                      size="lg"
+                      onClick={() => processBet(1)}
+                      isLoading={isLoading}
+                      loadingText="Processando..."
+                    >
+                      Apostar nesse time
+                    </Button>
+                  )}
+                </VStack>
+              </Box>
+            )}
+
+            {(dispute.winner == 0 || dispute.winner == 2) && (
+              <Box {...cardStyle}>
+                <VStack spacing={4}>
+                  {dispute.img2 && (
+                    <Image
+                      src={dispute.img2}
+                      alt={dispute.team2}
+                      borderRadius="xl"
+                      maxH="200px"
+                      objectFit="cover"
+                      w="full"
+                    />
+                  )}
+                  <Text fontSize="xl" fontWeight="bold" color="white">
+                    {dispute.team2}
+                  </Text>
+                  <Badge
+                    bgGradient="linear(to-r, rgba(124,58,237,0.3), rgba(59,130,246,0.3))"
+                    border="1px solid rgba(124,58,237,0.4)"
+                    color="whiteAlpha.900"
+                    borderRadius="full"
+                    px={4}
+                    py={2}
+                    fontSize="sm"
+                  >
+                    {Web3.utils.fromWei(dispute.total2.toString(), "ether")} POL apostados
+                  </Badge>
+                  {dispute.winner == 2 ? (
+                    <Button
+                      width="full"
+                      colorScheme="green"
+                      size="lg"
+                      onClick={btnClaimClick}
+                      isLoading={isLoading}
+                      loadingText="Processando..."
+                    >
+                      Pegar meu prêmio 🏆
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="brand"
+                      width="full"
+                      size="lg"
+                      onClick={() => processBet(2)}
+                      isLoading={isLoading}
+                      loadingText="Processando..."
+                    >
+                      Apostar nesse time
+                    </Button>
+                  )}
+                </VStack>
+              </Box>
+            )}
+          </SimpleGrid>
+
+          {/* Mensagem de status */}
+          {message && (
+            <Flex justify="center" align="center" gap={3}>
+              {isLoading && <Spinner size="sm" color="#7C3AED" />}
+              <Text color="whiteAlpha.700" fontSize="sm">
+                {message}
+              </Text>
+            </Flex>
           )}
-          {dispute.winner == 0 || dispute.winner == 2 ? (
-            <div className="col">
-              <h3 className="my-2 d-block mx-auto" style={{ width: 250 }}>
-                {dispute.team2}
-              </h3>
-              <img
-                src={dispute.img2}
-                className="d-block mx-auto img-fluid rounded"
-                width={250}
-              />
-              {dispute.winner == 2 ? (
-                <button
-                  className="btn btn-primary p-3 my-2 d-block mx-auto"
-                  style={{ width: 250 }}
-                  onClick={btnClaimClick}
-                >
-                  Pegar meu prêmio
-                </button>
-              ) : (
-                <button
-                  className="btn btn-primary p-3 my-2 d-block mx-auto"
-                  style={{ width: 250 }}
-                  onClick={() => processBet(2)}
-                >
-                  Aposto nesse time
-                </button>
-              )}
-              <span
-                className="badge text-bg-secondary d-block mx-auto"
-                style={{ width: 250 }}
-              >
-                {Web3.utils.fromWei(dispute.total2, "ether")} POL Apostados
-              </span>
-            </div>
-          ) : (
-            <></>
-          )}
-        </div>
-        <div className="row align-items-center">
-          <p className="message">{message}</p>
-        </div>
-        <footer className="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
-          <p className="col-4 mb-0 text-body-secondary">
-            &copy; 2024 BetTime, Inc
-          </p>
-          <ul className="nav col-4 justify-content-end">
-            <li className="nav-item">
-              <a href="/" className="nav-link px-2 text-body-secondary">
-                Home
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="/about" className="nav-link px-2 text-body-secondary">
-                About
-              </a>
-            </li>
-          </ul>
-        </footer>
-      </div>
-    </>
+        </VStack>
+      </Container>
+
+      {/* Footer */}
+      <Box
+        borderTop="1px solid rgba(124,58,237,0.15)"
+        py={4}
+        px={8}
+        mt={10}
+      >
+        <Flex justify="space-between" align="center">
+          <Text color="whiteAlpha.400" fontSize="sm">
+            © 2024 BetTimes, Inc
+          </Text>
+          <Flex gap={6}>
+            <Link href="/" color="whiteAlpha.400" fontSize="sm" _hover={{ color: "white" }}>
+              Home
+            </Link>
+            <Link href="/about" color="whiteAlpha.400" fontSize="sm" _hover={{ color: "white" }}>
+              About
+            </Link>
+          </Flex>
+        </Flex>
+      </Box>
+    </Box>
   );
 }
